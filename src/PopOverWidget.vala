@@ -29,10 +29,12 @@ public class NordVPN.PopOverWidget : Gtk.Box {
 
     settings_icon_button.clicked.connect (() => {
       var window = new Gtk.Window () {
-        resizable = false,
-        title = "NordVPN Settings"
+        resizable = false,        
+        title = "NordVPN Settings",        
       };
 
+      window.set_default_size(640, 480);
+      window.add(new Gtk.Label("Hello World!"));
       window.show_all ();
     });
 

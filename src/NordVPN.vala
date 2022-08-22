@@ -131,26 +131,43 @@ public class NordVPN.Controller {
   public Gtk.TreeStore get_all_connection_options () {
     Gtk.TreeIter root;
     NordVPN.State current_state = this.get_state ();
-    Gtk.TreeStore store = new Gtk.TreeStore (3, typeof (string), typeof (string), typeof (bool));
+    Gtk.TreeStore store = new Gtk.TreeStore (4,
+                                             typeof (string), // label
+                                             typeof (bool), //   is_visible
+                                             typeof (bool), //   is_active
+                                             typeof (string) //  value
+                                             );
 
     // Adds Groups
     store.append (out root, null);
-    store.set (root, 0, "Specialty Servers", -1);
+    store.set (root, 0, "Specialty Servers", 1, false, -1);
     Gtk.TreeIter groups_iterator;
 
     foreach (Touple<string> country in this.get_groups ()) {
       store.append (out groups_iterator, root);
-      store.set (groups_iterator, 0, country.get (0), 1, country.get (1), 2, false, -1);
+      store.set (groups_iterator, 
+        0, country.get (0), 
+        1, true, 
+        2, false,
+        3, country.get (1),
+        -1
+      );
     }
 
     // Adds Countries
     store.append (out root, null);
-    store.set (root, 0, "Locations", -1);
+    store.set (root, 0, "Locations", 1, false, -1);
     Gtk.TreeIter country_iterator;
 
     foreach (Touple<string> country in this.get_countries ()) {
       store.append (out country_iterator, root);
-      store.set (country_iterator, 0, country.get (0), 1, country.get (1), 2, country.get (0) == current_state.country, -1);
+      store.set (country_iterator,
+                 0, country.get (0),
+                 1, true,
+                 2, country.get (0) == current_state.country,
+                 3, country.get (1),
+                 -1
+                 );
 
       // Add Cities
       Touple<string>[] cities = this.get_cities (country.get (1));
@@ -158,7 +175,13 @@ public class NordVPN.Controller {
         Gtk.TreeIter cities_iterator;
         foreach (Touple<string> city in cities) {
           store.append (out cities_iterator, country_iterator);
-          store.set (cities_iterator, 0, city.get (0), 1, city.get (1), 2, city.get (0) == current_state.city, -1);
+          store.set (cities_iterator,
+                     0, city.get (0),
+                     1, true,
+                     2, city.get (0) == current_state.city,
+                     3, city.get (1),
+                     -1
+                     );
         }
       }
 
