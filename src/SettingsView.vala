@@ -8,7 +8,7 @@ public class NordVPN.SettingsView : Gtk.Window {
     this.set_default_size (640, 480);
   }
 
-  public void show () {
+  public new void show () {
     this.visible = true;
   }
 

@@ -48,6 +48,8 @@ public class NordVPN.Touple<T> {
 }
 
 public class NordVPN.Controller {
+  public signal void connection_changed ();
+
   public Controller () {}
 
   private string MESH_WARNING = "New feature - Meshnet! Link remote devices in Meshnet to connect to them directly over encrypted private tunnels, and route your traffic through another device. Use the `nordvpn meshnet --help` command to get started. Learn more: https://nordvpn.com/features/meshnet/";
@@ -63,14 +65,14 @@ public class NordVPN.Controller {
     return buffer.strip ();
   }
 
-  public void connect (string server) {
-    Posix.system ("nordvpn c");
-
+  public void connect (string ? server = "") {
+    Posix.system ("nordvpn c " + server);
+    connection_changed ();
   }
 
   public void disconnect () {
     Posix.system ("nordvpn d");
-
+    connection_changed ();
   }
 
   public NordVPN.State get_state () {
@@ -137,11 +139,15 @@ public class NordVPN.Model : GLib.Object {
   public NordVPN.State state;
   public bool is_connected;
   public Gtk.TreeStore store;
+  public Gtk.TreePath active_path { get; set; default = null; }
 
   public Model () {
     this.controller = new NordVPN.Controller ();
-    this.refresh_status ();
+    this.controller.connection_changed.connect (() => {
+      this.refresh_status ();
+    });
 
+    this.refresh_status ();
     this.store = this.get_all_connection_options ();
   }
 
@@ -167,13 +173,13 @@ public class NordVPN.Model : GLib.Object {
     store.set (root, 0, "Specialty Servers", 1, false, -1);
     Gtk.TreeIter groups_iterator;
 
-    foreach (Touple<string> country in this.controller.get_groups ()) {
+    foreach (Touple<string> group in this.controller.get_groups ()) {
       store.append (out groups_iterator, root);
       store.set (groups_iterator,
-                 0, country.get (0),
+                 0, group.get (0),
                  1, true,
                  2, false,
-                 3, country.get (1),
+                 3, group.get (1),
                  -1
                  );
     }
@@ -184,28 +190,39 @@ public class NordVPN.Model : GLib.Object {
     Gtk.TreeIter country_iterator;
 
     foreach (Touple<string> country in this.controller.get_countries ()) {
+      bool country_is_active = is_connected && country.get (0) == this.state.country;
+
       store.append (out country_iterator, root);
       store.set (country_iterator,
                  0, country.get (0),
                  1, true,
-                 2, country.get (0) == this.state.country,
+                 2, country_is_active,
                  3, country.get (1),
                  -1
                  );
+
+      if (country_is_active) {
+        this.active_path = store.get_path (country_iterator);
+      }
 
       // Add Cities
       Touple<string>[] cities = this.controller.get_cities (country.get (1));
       if (cities.length > 1) {
         Gtk.TreeIter cities_iterator;
         foreach (Touple<string> city in cities) {
+          bool city_is_active = is_connected && city.get (0) == this.state.city;
           store.append (out cities_iterator, country_iterator);
           store.set (cities_iterator,
                      0, city.get (0),
                      1, true,
-                     2, city.get (0) == this.state.city,
+                     2, city_is_active,
                      3, city.get (1),
                      -1
                      );
+
+          if (city_is_active) {
+            this.active_path = store.get_path (cities_iterator);
+          }
         }
       }
 

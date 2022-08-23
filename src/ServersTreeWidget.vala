@@ -1,8 +1,15 @@
 public class NordVPN.ServersTreeWidget : Gtk.Box {
-  private string current_selection;
-  private Gtk.SearchEntry search_bar;
+  public signal void selection_changed (string next_label, string next_value, Gtk.TreePath next_path);
 
-  public ServersTreeWidget (Gtk.TreeStore nordvpn_model) {
+  private Gtk.SearchEntry search_bar;
+  private Gtk.TreePath active_path;
+
+  public ServersTreeWidget (Gtk.TreeStore nordvpn_model, Gtk.TreePath ? initial_path = null) {
+    if (initial_path != null) {
+      active_path = initial_path;
+
+    }
+
     search_bar = new Gtk.SearchEntry ();
 
     Gtk.TreeView servers_tree_view = new Gtk.TreeView ();
@@ -49,24 +56,58 @@ public class NordVPN.ServersTreeWidget : Gtk.Box {
       servers_tree_view.expand_all ();
     });
 
-    cell_renderer_radio.toggled.connect ((path) => {
-      //  GLib.Value prev_state;
-      //  Gtk.TreeIter iterator;
+    cell_renderer_radio.toggled.connect ((next_path_string) => {
+      GLib.Value buffer;
+      Gtk.TreeIter iterator;
+      string next_label = "";
+      string next_value = "";
+      Gtk.TreePath next_path = new Gtk.TreePath.from_string (next_path_string);
 
-      //  if (this.current_selection != null) {
-      //    nordvpn_model.get_iter (out iterator, new Gtk.TreePath.from_string (this.current_selection));
-      //    nordvpn_model.set_value (iterator, 2, false);
-      //  }
+      if ((bool)active_path) {
+        nordvpn_model.get_iter (out iterator, this.active_path);
+        nordvpn_model.set_value (iterator, 2, false);
+        set_parent (nordvpn_model, iterator, 2, false);
 
-      //  if (this.current_selection != path) {
-      //    this.current_selection = path;
-      //  }
+        if (active_path.to_string () != next_path.to_string ()) {
+          this.active_path = next_path;
+        }
+      }
 
-      //  nordvpn_model.get_iter (out iterator, new Gtk.TreePath.from_string (path));
-      //  nordvpn_model.get_value (iterator, 2, out prev_state);
-      //  nordvpn_model.set_value (iterator, 2, !(bool) prev_state);
+
+      nordvpn_model.get_iter (out iterator, next_path);
+      nordvpn_model.set_value (iterator, 2, true);
+      set_parent (nordvpn_model, iterator, 2, true);
+
+      nordvpn_model.get_value (iterator, 3, out buffer);
+      next_value = (string) buffer;
+
+      nordvpn_model.get_value (iterator, 0, out buffer);
+      next_label += (string) buffer;
+      get_parent (nordvpn_model, iterator, 1, out buffer);
+      if ((bool) buffer) {
+        get_parent (nordvpn_model, iterator, 0, out buffer);
+        next_label = (string) buffer + ", " + next_label;
+      }
+
+      selection_changed (next_label, next_value, next_path);
     });
 
+  }
+
+  private void get_parent (Gtk.TreeStore model, Gtk.TreeIter iterator, int column, out GLib.Value buffer) {
+    Gtk.TreeIter iterator_parent;
+
+    if (model.iter_parent (out iterator_parent, iterator)) {
+      model.get_value (iterator_parent, column, out buffer);
+    }
+  }
+
+  private void set_parent (Gtk.TreeStore model, Gtk.TreeIter iterator, int column, bool next_value) {
+    Gtk.TreeIter iterator_parent;
+
+    if (model.iter_parent (out iterator_parent, iterator)) {
+      model.set_value (iterator_parent, column, next_value);
+    }
   }
 
   private bool filter_tree (Gtk.TreeModel model, Gtk.TreeIter iterator) {
@@ -99,6 +140,10 @@ public class NordVPN.ServersTreeWidget : Gtk.Box {
     } while (model.iter_next (ref child_iterator));
 
     return result;
+  }
+
+  public void set_active_path (Gtk.TreePath next_path) {
+    this.active_path = next_path;
   }
 
 }
