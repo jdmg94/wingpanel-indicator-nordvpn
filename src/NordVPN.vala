@@ -128,9 +128,33 @@ public class NordVPN.Controller {
     return this.get_request ("nordvpn cities " + country);
   }
 
-  public Gtk.TreeStore get_all_connection_options () {
+}
+
+public class NordVPN.Model : GLib.Object {
+  public signal void state_changed (NordVPN.State next_state);
+
+  public NordVPN.Controller controller;
+  public NordVPN.State state;
+  public bool is_connected;
+  public Gtk.TreeStore store;
+
+  public Model () {
+    this.controller = new NordVPN.Controller ();
+    this.refresh_status ();
+
+    this.store = this.get_all_connection_options ();
+  }
+
+  public void refresh_status () {
+    var next_state = this.controller.get_state ();
+
+    this.state = next_state;
+    this.state_changed (next_state);
+    this.is_connected = next_state.status == "Connected";
+  }
+
+  private Gtk.TreeStore get_all_connection_options () {
     Gtk.TreeIter root;
-    NordVPN.State current_state = this.get_state ();
     Gtk.TreeStore store = new Gtk.TreeStore (4,
                                              typeof (string), // label
                                              typeof (bool), //   is_visible
@@ -143,15 +167,15 @@ public class NordVPN.Controller {
     store.set (root, 0, "Specialty Servers", 1, false, -1);
     Gtk.TreeIter groups_iterator;
 
-    foreach (Touple<string> country in this.get_groups ()) {
+    foreach (Touple<string> country in this.controller.get_groups ()) {
       store.append (out groups_iterator, root);
-      store.set (groups_iterator, 
-        0, country.get (0), 
-        1, true, 
-        2, false,
-        3, country.get (1),
-        -1
-      );
+      store.set (groups_iterator,
+                 0, country.get (0),
+                 1, true,
+                 2, false,
+                 3, country.get (1),
+                 -1
+                 );
     }
 
     // Adds Countries
@@ -159,18 +183,18 @@ public class NordVPN.Controller {
     store.set (root, 0, "Locations", 1, false, -1);
     Gtk.TreeIter country_iterator;
 
-    foreach (Touple<string> country in this.get_countries ()) {
+    foreach (Touple<string> country in this.controller.get_countries ()) {
       store.append (out country_iterator, root);
       store.set (country_iterator,
                  0, country.get (0),
                  1, true,
-                 2, country.get (0) == current_state.country,
+                 2, country.get (0) == this.state.country,
                  3, country.get (1),
                  -1
                  );
 
       // Add Cities
-      Touple<string>[] cities = this.get_cities (country.get (1));
+      Touple<string>[] cities = this.controller.get_cities (country.get (1));
       if (cities.length > 1) {
         Gtk.TreeIter cities_iterator;
         foreach (Touple<string> city in cities) {
@@ -178,7 +202,7 @@ public class NordVPN.Controller {
           store.set (cities_iterator,
                      0, city.get (0),
                      1, true,
-                     2, city.get (0) == current_state.city,
+                     2, city.get (0) == this.state.city,
                      3, city.get (1),
                      -1
                      );

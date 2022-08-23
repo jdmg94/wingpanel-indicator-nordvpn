@@ -1,7 +1,7 @@
 public class NordVPN.Indicator : Wingpanel.Indicator {
+  private NordVPN.Model nordvpn;
   private Gtk.Image display_widget;
   private NordVPN.PopOverWidget popover_widget;
-  private NordVPN.Controller nordvpn;
 
   public Indicator () {
     Object (
@@ -9,20 +9,19 @@ public class NordVPN.Indicator : Wingpanel.Indicator {
       );
 
     visible = true;
-    nordvpn = new NordVPN.Controller ();
+    nordvpn = new NordVPN.Model ();
   }
 
-  public override void opened () {}
+  public override void opened () {
+    nordvpn.refresh_status();
+  }
 
   public override void closed () {}
 
   public override Gtk.Widget get_display_widget () {
     if (display_widget == null) {
-      NordVPN.State connection = nordvpn.get_state ();
-      bool is_active = connection.status == "Connected";
-      
       display_widget = new Gtk.Image.from_icon_name (
-        is_active ? "nordvpn-original-symbolic" : "nordvpn-positive-symbolic",
+        nordvpn.is_connected ? "nordvpn-original-symbolic" : "nordvpn-positive-symbolic",
         Gtk.IconSize.LARGE_TOOLBAR
         );
     }

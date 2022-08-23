@@ -1,8 +1,8 @@
-public class NordVPN.ServersTreeView : Gtk.Box {
+public class NordVPN.ServersTreeWidget : Gtk.Box {
   private string current_selection;
   private Gtk.SearchEntry search_bar;
 
-  public ServersTreeView (Gtk.TreeStore nordvpn_model) {
+  public ServersTreeWidget (Gtk.TreeStore nordvpn_model) {
     search_bar = new Gtk.SearchEntry ();
 
     Gtk.TreeView servers_tree_view = new Gtk.TreeView ();

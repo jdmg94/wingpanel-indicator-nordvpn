@@ -29,11 +29,12 @@ install_data(
 
 shared_module(
     meson.project_name(),
-    'src/Indicator.vala',
     'src/NordVPN.vala',
+    'src/Indicator.vala',
+    'src/SettingsView.vala',
     'src/PopOverWidget.vala',
     'src/RevealerSwitch.vala',
-    'src/ServersTreeView.vala',
+    'src/ServersTreeWidget.vala',
     dependencies: [
         dependency('glib-2.0'),
         dependency('gio-2.0'),
