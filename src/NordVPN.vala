@@ -1,4 +1,5 @@
 public class NordVPN.State : GLib.Object {
+  public bool is_connected;
   public string status { get; set; default = "Disconnected"; }
   public string country { get; set; }
   public string city { get; set; }
@@ -92,6 +93,8 @@ public class NordVPN.Controller {
         result.set (key, value);
       }
 
+      result.is_connected = result.status == "Connected";
+
     }
 
     return result;
@@ -135,13 +138,14 @@ public class NordVPN.Controller {
 public class NordVPN.Model : GLib.Object {
   public signal void state_changed (NordVPN.State next_state);
 
+  private NordVPN.Settings settings;
   public NordVPN.Controller controller;
   public NordVPN.State state;
-  public bool is_connected;
   public Gtk.TreeStore store;
   public Gtk.TreePath active_path { get; set; default = null; }
 
   public Model () {
+    this.settings = new NordVPN.Settings ();
     this.controller = new NordVPN.Controller ();
     this.controller.connection_changed.connect (() => {
       this.refresh_status ();
@@ -156,7 +160,6 @@ public class NordVPN.Model : GLib.Object {
 
     this.state = next_state;
     this.state_changed (next_state);
-    this.is_connected = next_state.status == "Connected";
   }
 
   private Gtk.TreeStore get_all_connection_options () {
@@ -190,7 +193,7 @@ public class NordVPN.Model : GLib.Object {
     Gtk.TreeIter country_iterator;
 
     foreach (Touple<string> country in this.controller.get_countries ()) {
-      bool country_is_active = is_connected && country.get (0) == this.state.country;
+      bool country_is_active = state.is_connected && country.get (0) == this.state.country;
 
       store.append (out country_iterator, root);
       store.set (country_iterator,
@@ -210,7 +213,7 @@ public class NordVPN.Model : GLib.Object {
       if (cities.length > 1) {
         Gtk.TreeIter cities_iterator;
         foreach (Touple<string> city in cities) {
-          bool city_is_active = is_connected && city.get (0) == this.state.city;
+          bool city_is_active = state.is_connected && city.get (0) == this.state.city;
           store.append (out cities_iterator, country_iterator);
           store.set (cities_iterator,
                      0, city.get (0),

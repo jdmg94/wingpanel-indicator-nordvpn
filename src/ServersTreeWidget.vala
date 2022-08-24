@@ -145,5 +145,4 @@ public class NordVPN.ServersTreeWidget : Gtk.Box {
   public void set_active_path (Gtk.TreePath next_path) {
     this.active_path = next_path;
   }
-
 }

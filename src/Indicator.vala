@@ -13,7 +13,7 @@ public class NordVPN.Indicator : Wingpanel.Indicator {
   }
 
   public override void opened () {
-    nordvpn.refresh_status();
+    nordvpn.refresh_status ();
   }
 
   public override void closed () {}
@@ -21,9 +21,15 @@ public class NordVPN.Indicator : Wingpanel.Indicator {
   public override Gtk.Widget get_display_widget () {
     if (display_widget == null) {
       display_widget = new Gtk.Image.from_icon_name (
-        nordvpn.is_connected ? "nordvpn-original-symbolic" : "nordvpn-positive-symbolic",
+        nordvpn.state.is_connected ? "nordvpn-original-symbolic" : "nordvpn-positive-symbolic",
         Gtk.IconSize.LARGE_TOOLBAR
         );
+
+      display_widget.set_has_tooltip (true);
+      nordvpn.state_changed.connect ((next_state) => {
+        display_widget.tooltip_markup = derive_tooltip_markup (next_state);
+        display_widget.icon_name = next_state.is_connected ? "nordvpn-original-symbolic" : "nordvpn-positive-symbolic";
+      });
     }
 
     return display_widget;
@@ -32,16 +38,35 @@ public class NordVPN.Indicator : Wingpanel.Indicator {
   public override Gtk.Widget ? get_widget () {
     if (popover_widget == null) {
       popover_widget = new NordVPN.PopOverWidget (nordvpn);
-
-      popover_widget.vpn_changed.connect ((is_active) => {
-        display_widget.icon_name = is_active ? "nordvpn-original-symbolic" : "nordvpn-positive-symbolic";
-      });
-
     }
 
     return popover_widget;
   }
 
+  private string derive_tooltip_markup (NordVPN.State connection) {
+    if (!connection.is_connected) {
+      return connection.status;
+    }
+
+    StringBuilder status_tooltip = new StringBuilder ();
+    string key_markup = "<b><span>%s:</span></b> ";
+    status_tooltip.append (key_markup.printf ("Current Server"));
+    status_tooltip.append (connection.current_server);
+    status_tooltip.append ("\n");
+
+    status_tooltip.append (key_markup.printf ("Server IP"));
+    status_tooltip.append (connection.server_ip);
+    status_tooltip.append ("\n");
+
+    status_tooltip.append (key_markup.printf ("Current Protocol"));
+    status_tooltip.append (connection.current_protocol);
+    status_tooltip.append ("\n");
+
+    status_tooltip.append (key_markup.printf ("Current Technology"));
+    status_tooltip.append (connection.current_technology);
+
+    return status_tooltip.str;
+  }
 }
 
 public Wingpanel.Indicator ? get_indicator (Module module, Wingpanel.IndicatorManager.ServerType server_type) {
