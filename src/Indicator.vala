@@ -51,7 +51,7 @@ public class NordVPN.Indicator : Wingpanel.Indicator {
     StringBuilder status_tooltip = new StringBuilder ();
     string key_markup = "<b><span>%s:</span></b> ";
     status_tooltip.append (key_markup.printf ("Location"));
-    status_tooltip.append ("%s, %s".printf(connection.city, connection.country));
+    status_tooltip.append ("%s, %s".printf (connection.city, connection.country));
     status_tooltip.append ("\n");
     status_tooltip.append (key_markup.printf ("Current Server"));
     status_tooltip.append (connection.current_server);
