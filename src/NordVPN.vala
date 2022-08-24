@@ -17,13 +17,14 @@ public class NordVPN.Settings : GLib.Object {
   public string technology { get; set; }
   public string firewall { get; set; }
   public string kill_switch { get; set; }
-  public string threat_protection { get; set; }
-  public string notifications { get; set; }
-  public string auto_connect { get; set; }
+  public string threat_protection_lite { get; set; }
+  public string autoconnect { get; set; }
+  public string obfuscate { get; set; }
   public string ipv6 { get; set; }
+  public string notify { get; set; }
   public string meshnet { get; set; }
-  public string dns { get; set; }
-  public string whitelisted_subnets { get; set; }
+  public string[] whitelisted_subnets { get; set; }
+  public string[] dns { get; set; }
 
   public Settings () {}
 }
@@ -100,6 +101,43 @@ public class NordVPN.Controller {
     return result;
   }
 
+  public NordVPN.Settings get_settings () {
+    string buffer;
+    NordVPN.Settings result = new NordVPN.Settings ();
+    Process.spawn_command_line_sync ("nordvpn settings", out buffer, null, null);
+
+    if (buffer.contains (MESH_WARNING)) {
+      buffer = sanitize (buffer);
+    }
+
+    string[] parts = buffer.split ("\n");
+    foreach (unowned string item in parts) {
+      if (":" in item) {
+        string[] key_value_country = item.split (":");
+        string key = key_value_country[0].down ().replace (" ", "_");
+        string value = key_value_country[1].strip ();
+
+        if (value != "") {
+          if (key == "dns" && "," in value) {
+            string[] array_value = value.split (",");
+            result.set (key, array_value);
+            continue;
+          }
+
+          result.set (key, value);
+          continue;
+        }
+
+        buffer = key;
+      } else {
+        string[] array_value = { item };
+        result.set (buffer, array_value);
+      }
+    }
+
+    return result;
+  }
+
   public NordVPN.Touple<string>[] get_request (string cmd) {
     string buffer;
     NordVPN.Touple<string>[] result = {};
@@ -145,14 +183,14 @@ public class NordVPN.Model : GLib.Object {
   public Gtk.TreePath active_path { get; set; default = null; }
 
   public Model () {
-    this.settings = new NordVPN.Settings ();
     this.controller = new NordVPN.Controller ();
     this.controller.connection_changed.connect (() => {
       this.refresh_status ();
     });
 
     this.refresh_status ();
-    this.store = this.get_all_connection_options ();
+    this.settings = controller.get_settings ();
+    this.store = get_all_connection_options ();
   }
 
   public void refresh_status () {
