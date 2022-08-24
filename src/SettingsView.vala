@@ -6,10 +6,6 @@ public class NordVPN.SettingsView : Gtk.Window {
 
   public SettingsView () {
     this.set_default_size (640, 480);
+    this.add(new Gtk.Label("Hello Settings!"));
   }
-
-  public new void show () {
-    this.visible = true;
-  }
-
 }

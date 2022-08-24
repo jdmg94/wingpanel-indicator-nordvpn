@@ -44,8 +44,8 @@ class NordVPN.RevealerSwitch : Gtk.Box {
     this.revealer_content.pack_start (child);
   }
 
-  public void set_active(bool next_state) {
-    this.main_switch.set_active(next_state);
+  public void set_active (bool next_state) {
+    this.main_switch.set_active (next_state);
   }
 
 }
