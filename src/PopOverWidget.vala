@@ -3,15 +3,19 @@ public class NordVPN.PopOverWidget : Gtk.Box {
   private NordVPN.InfoBar info_bar;
   private RevealerSwitch connection_toggle;
 
+  public signal void opened_dialog ();
+
   public PopOverWidget (NordVPN.Model nordvpn) {
     NordVPN.State connection = nordvpn.state;
+    string location_string = "%s, %s".printf (connection.city, connection.country);
     NordVPN.ServersTreeWidget servers_tree_view = new NordVPN.ServersTreeWidget (nordvpn.store, nordvpn.active_path);
 
     this.connection_toggle = new RevealerSwitch (connection.status, connection.is_connected);
-    this.info_bar = new NordVPN.InfoBar ("%s, %s".printf (connection.city, connection.country));
+    this.info_bar = new NordVPN.InfoBar (location_string, nordvpn);
 
     this.set_margin_top (5);
     this.orientation = Gtk.Orientation.VERTICAL;
+
     this.pack_start (connection_toggle);
     this.pack_start (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
     this.pack_start (servers_tree_view);
@@ -24,6 +28,10 @@ public class NordVPN.PopOverWidget : Gtk.Box {
       } else {
         nordvpn.controller.disconnect ();
       }
+    });
+
+    this.info_bar.clicked.connect (() => {
+      opened_dialog ();
     });
 
     nordvpn.state_changed.connect (update_connection_label);
