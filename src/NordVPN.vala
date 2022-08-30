@@ -26,6 +26,9 @@ public class NordVPN.Settings : GLib.Object {
   public string[] whitelisted_subnets { get; set; }
   public string[] dns { get; set; }
 
+  public string[] technologies { get; default = { "OPENVPN", "NORDLYNX" }; }
+  public string[] protocols { get; default = { "TCP", "UDP" }; }
+
   public Settings () {}
 }
 
@@ -57,12 +60,11 @@ public class NordVPN.Controller {
   private string MESH_WARNING = "New feature - Meshnet! Link remote devices in Meshnet to connect to them directly over encrypted private tunnels, and route your traffic through another device. Use the `nordvpn meshnet --help` command to get started. Learn more: https://nordvpn.com/features/meshnet/";
   private string sanitize (string value) {
     string buffer = value;
-    string[] chars_to_remove = { MESH_WARNING, "\\r", "\\n", "-" };
+    string[] chars_to_remove = { MESH_WARNING, "\\r", "\\n", "-", "/", "|", "\\" };
 
     foreach (unowned string item in chars_to_remove) {
       buffer = buffer.replace (item, "");
     }
-
 
     return buffer.strip ();
   }
@@ -75,6 +77,10 @@ public class NordVPN.Controller {
   public void disconnect () {
     Posix.system ("nordvpn d");
     connection_changed ();
+  }
+
+  public void update_setting (string key, string value) {
+    Posix.system ("nordvpn set %s %s".printf (key, value));
   }
 
   public NordVPN.State get_state () {
@@ -113,29 +119,57 @@ public class NordVPN.Controller {
     string[] parts = buffer.split ("\n");
     foreach (unowned string item in parts) {
       if (":" in item) {
-        string[] key_value_country = item.split (":");
-        string key = key_value_country[0].down ().replace (" ", "_");
-        string value = key_value_country[1].strip ();
+        string[] key_value = item.split (":");
+        string key = key_value[0].down ().replace (" ", "_");
+        string value = key_value[1].strip ();
+
 
         if (value != "") {
-          if (key == "dns" && "," in value) {
-            string[] array_value = value.split (",");
-            result.set (key, array_value);
+          if (key == "dns") {
+            if ("," in value) {
+              string[] array_value = value.split (",");
+
+              for (var i = 0 ; i < array_value.length ; i++) {
+                array_value[i] = array_value[i].strip ();
+              }
+
+              result.set (key, array_value);
+              continue;
+            } else {
+              string[] array_value = { value };
+              result.set (key, array_value);
+            }
+          } else {
+            result.set (key, value);
             continue;
           }
-
-          result.set (key, value);
-          continue;
         }
 
         buffer = key;
+
       } else {
-        string[] array_value = { item };
-        result.set (buffer, array_value);
+        try {
+          GLib.Value array_buffer;
+          result.get (buffer, out array_buffer, null);
+          string[] array_value = (string[]) array_buffer;
+          array_value += item.strip ();
+          result.set (buffer, array_value);
+        } catch {}
       }
     }
 
     return result;
+  }
+
+  public string get_account_information () {
+    string buffer;
+    Touple<string>[] result = {};
+    Process.spawn_command_line_sync ("nordvpn account", out buffer, null, null);
+
+    buffer = sanitize (buffer);
+    buffer = buffer.replace ("Account Information:\n", "");
+
+    return buffer;
   }
 
   public NordVPN.Touple<string>[] get_request (string cmd) {
@@ -176,7 +210,7 @@ public class NordVPN.Controller {
 public class NordVPN.Model : GLib.Object {
   public signal void state_changed (NordVPN.State next_state);
 
-  private NordVPN.Settings settings;
+  public NordVPN.Settings settings;
   public NordVPN.Controller controller;
   public NordVPN.State state;
   public Gtk.TreeStore store;
