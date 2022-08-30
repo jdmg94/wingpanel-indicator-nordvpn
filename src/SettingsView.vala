@@ -16,7 +16,7 @@ public class NordVPN.SettingsView : Granite.Dialog {
     Gtk.Box controls = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
     Gtk.Box row_logo = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
     Gtk.Image NordVPN_logo = new Gtk.Image.from_icon_name ("nordvpn-logo-symbolic", Gtk.IconSize.DIALOG);
-    Gtk.LinkButton author_link = new Gtk.LinkButton.with_label ("https://josemunoz.dev", "Made by José Muñoz 🇭🇳");
+    Gtk.LinkButton author_link = new Gtk.LinkButton.with_label ("https://josemunoz.dev", "Unofficially Made by José Muñoz 🇭🇳");
     /* *INDENT-OFF* */
     GLib.Regex ip_list_schema = /((25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)(,\n|,?$))/;
     /* *INDENT-ON* */
@@ -71,8 +71,12 @@ public class NordVPN.SettingsView : Granite.Dialog {
     });
 
     dns_input.activate.connect (() => {
+      string buffer = dns_input.get_text ();
+
       if (dns_input.is_valid) {
-        message ("activated!");
+        update_property ("dns", buffer.replace (",", " "));
+      } else if (buffer.length == 0) {
+          update_property ("dns", "disabled");
       }
     });
 
@@ -83,8 +87,8 @@ public class NordVPN.SettingsView : Granite.Dialog {
     row_logo.pack_start (account_info, true, true, 0);
 
     controls.pack_start (dns_entry);
-    controls.pack_start (protocol_select);
     controls.pack_start (technology_select);
+    controls.pack_start (protocol_select);
 
     Touple<string>[] labels = {
       new Touple<string>("Auto Connect", "autoconnect"),
