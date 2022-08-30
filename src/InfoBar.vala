@@ -1,9 +1,10 @@
 public class NordVPN.InfoBar : Gtk.Box {
   private Gtk.Label connection_label;
   private Gtk.Button settings_icon_button;
-  private NordVPN.State connection;
 
-  public InfoBar (string label) {
+  public signal void clicked ();
+
+  public InfoBar (string label, NordVPN.Model ? model = null) {
     settings_icon_button = new Gtk.Button.from_icon_name ("open-menu-symbolic", Gtk.IconSize.MENU);
     connection_label = new Gtk.Label (label) {
       halign = Gtk.Align.START,
@@ -11,9 +12,10 @@ public class NordVPN.InfoBar : Gtk.Box {
 
     connection_label.get_style_context ().add_class (Granite.STYLE_CLASS_H4_LABEL);
     settings_icon_button.clicked.connect (() => {
-      var window = new NordVPN.SettingsView ();
+      var window = new NordVPN.SettingsView (model);
 
-      window.show ();
+      clicked ();
+      window.show_all ();
     });
 
     this.pack_start (connection_label, true, true, 0);

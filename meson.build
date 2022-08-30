@@ -2,7 +2,7 @@ project(
     'wingpanel-nordvpn',
     'vala',
     'c',
-    version : '0.0.2'
+    version : '0.1.0'
 )
 
 i18n = import('i18n')
@@ -17,8 +17,9 @@ posix_dep = meson.get_compiler('vala').find_library('posix')
 
 install_data(
    [
-    join_paths('assets', 'nordvpn-original-symbolic.svg'),
-    join_paths('assets', 'nordvpn-positive-symbolic.svg')
+    join_paths('assets', 'nordvpn-symbolic.svg'),
+    join_paths('assets', 'nordvpn-off-symbolic.svg'),
+    join_paths('assets', 'nordvpn-logo-symbolic.svg')
   ],
   install_dir: join_paths(
    get_option('prefix'), get_option('datadir'), 'icons', 'hicolor', 'scalable', 'status'
