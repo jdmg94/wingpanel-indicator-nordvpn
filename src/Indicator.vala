@@ -39,8 +39,8 @@ public class NordVPN.Indicator : Wingpanel.Indicator {
     if (popover_widget == null) {
       popover_widget = new NordVPN.PopOverWidget (nordvpn);
 
-      popover_widget.opened_dialog.connect(() => {
-        this.close();
+      popover_widget.opened_dialog.connect (() => {
+        this.close ();
       });
     }
 
@@ -81,6 +81,8 @@ public Wingpanel.Indicator ? get_indicator (Module module, Wingpanel.IndicatorMa
   if (server_type != Wingpanel.IndicatorManager.ServerType.SESSION) {
     return null;
   }
+
+  Notify.init ("dev.josemunoz.wingpanel-indicator-nordvpn");
 
   return new NordVPN.Indicator ();
 }

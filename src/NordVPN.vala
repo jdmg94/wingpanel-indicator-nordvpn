@@ -223,7 +223,6 @@ public class NordVPN.Model : GLib.Object {
     });
 
     this.refresh_status ();
-    this.settings = controller.get_settings ();
     this.store = get_all_connection_options ();
   }
 
@@ -232,6 +231,7 @@ public class NordVPN.Model : GLib.Object {
 
     this.state = next_state;
     this.state_changed (next_state);
+    this.settings = controller.get_settings ();
   }
 
   private Gtk.TreeStore get_all_connection_options () {

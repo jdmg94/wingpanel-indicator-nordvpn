@@ -2,7 +2,7 @@ project(
     'wingpanel-nordvpn',
     'vala',
     'c',
-    version : '0.1.0'
+    version : '0.1.1'
 )
 
 i18n = import('i18n')
@@ -11,6 +11,7 @@ gettext_name = meson.project_name() + '-indicator'
 
 add_global_arguments('-DGETTEXT_PACKAGE="@0@"'.format(gettext_name), language:'c')
 
+notify_dep = dependency('libnotify')
 wingpanel_dep = dependency('wingpanel')
 granite_dep = dependency('granite')
 posix_dep = meson.get_compiler('vala').find_library('posix')
@@ -42,6 +43,7 @@ shared_module(
         dependency('gtk+-3.0'),
         wingpanel_dep,
         granite_dep,
+        notify_dep,
         posix_dep
     ],
     install: true,
