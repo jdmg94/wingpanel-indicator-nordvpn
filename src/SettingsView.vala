@@ -45,8 +45,10 @@ public class NordVPN.SettingsView : Granite.Dialog {
       technology_combobox
       );
 
+    string dns_value = string.joinv (", ", nordvpn.settings.dns) ?? "";
     Granite.ValidatedEntry dns_input = new Granite.ValidatedEntry.from_regex (ip_list_schema) {
-      text = string.joinv (", ", nordvpn.settings.dns) ?? ""
+      text = dns_value == "disabled" ? "" : dns_value,
+      placeholder_text = "Press Enter to submit"
     };
 
     Gtk.Box dns_entry = get_label_row (
@@ -54,8 +56,11 @@ public class NordVPN.SettingsView : Granite.Dialog {
       dns_input
       );
 
-    protocols_combobox.set_sensitive (nordvpn.state.current_technology == "OPENVPN");
+    bool is_OpenVPN = nordvpn.state.current_technology == "OPENVPN";
+    bool is_cybersec_enabled = nordvpn.settings.threat_protection_lite == "enabled";
 
+    dns_entry.set_sensitive (!is_cybersec_enabled);
+    protocols_combobox.set_sensitive (is_OpenVPN);
     protocols_combobox.changed.connect (() => {
       string next_value = get_current_combobox_value (technology_combobox);
 
@@ -74,9 +79,21 @@ public class NordVPN.SettingsView : Granite.Dialog {
       string buffer = dns_input.get_text ();
 
       if (dns_input.is_valid) {
-        update_property ("dns", buffer.replace (",", " "));
+        var next_value = buffer.replace (",", " ");
+
+        update_property ("dns", next_value);
+        new Notify.Notification (
+          "DNS has been updated!",
+          "The new servers are: %s".printf (buffer),
+          "nordvpn-symbolic"
+          ).show ();
       } else if (buffer.length == 0) {
-          update_property ("dns", "disabled");
+        update_property ("dns", "disabled");
+        new Notify.Notification (
+          "DNS has been updated!",
+          "using default DNS",
+          "nordvpn-symbolic"
+          ).show ();
       }
     });
 
@@ -110,9 +127,19 @@ public class NordVPN.SettingsView : Granite.Dialog {
 
 
       tmp.toggled.connect ((next_state) => {
+        bool is_active = next_state.get_active ();
+
+        if (key == "threat_protection_lite") {
+          dns_entry.set_sensitive (!is_active);
+
+          if (is_active) {
+            dns_input.set_text ("");
+          }
+        }
+
         update_property (
           key.replace ("_", ""),
-          next_state.get_active () ? "on" : "off"
+          is_active ? "on" : "off"
           );
       });
 
@@ -127,6 +154,7 @@ public class NordVPN.SettingsView : Granite.Dialog {
     this.add_button ("Close", Gtk.ResponseType.CLOSE);
     this.response.connect ((response_type) => {
       if (response_type == Gtk.ResponseType.CLOSE) {
+        nordvpn.refresh_status ();
         this.destroy ();
       }
     });
